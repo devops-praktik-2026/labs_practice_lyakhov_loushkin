@@ -7,6 +7,11 @@
 
 ---
 
+## Состав
+
+* milyakhov -  Mr Miron
+* MrRafle - Mr Felix
+
 ##  (занятие 1)
 
 1. **Создайте свой репозиторий.** Нажмите «Use this template» → «Create a new
