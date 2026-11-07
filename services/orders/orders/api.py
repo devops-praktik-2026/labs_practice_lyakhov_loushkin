@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 
@@ -14,9 +14,22 @@ def create_order(order: schemas.OrderCreate, db: Session = Depends(get_db)):
         account_id=order.account_id,
         item=order.item,
         quantity=order.quantity,
-        created_at=datetime.now(timezone.utc)  # Явно задаём время
+        created_at=datetime.now(timezone.utc)
     )
     db.add(db_order)
     db.commit()
     db.refresh(db_order)
     return db_order
+
+
+@router.get("/orders/{order_id}", response_model=schemas.OrderResponse)
+def get_order_by_id(order_id: int, db: Session = Depends(get_db)):
+    order = db.query(models.Order).filter(models.Order.id == order_id).first()
+    
+    if not order:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Заказ {order_id} не найден"
+        )
+    
+    return order
