@@ -282,5 +282,5 @@ python3 scripts/check_env.py --docker
 
 | Кто | Роль на этапе 1 |
 | --- | --- |
-|     | ведущий |
-|     | второй |
+|  milyakhov   | ведущий |
+|  MrRafle   | второй |
