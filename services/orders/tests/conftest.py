@@ -1,42 +1,52 @@
-"""Общая подготовка для тестов сервиса клиентов.
-
-Каждый тест получает свою пустую базу данных в оперативной памяти.
-Так тесты не зависят друг от друга и не требуют запущенного PostgreSQL.
-"""
-
-from collections.abc import Iterator
-
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from accounts.db import Base, get_session
-from accounts.main import app
+from orders.main import app
+from orders.db import Base, get_db
+
+# Создаём тестовую базу в памяти (SQLite)
+engine = create_engine(
+    "sqlite:///:memory:",
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool
+)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-@pytest.fixture()
-def client() -> Iterator[TestClient]:
-    engine = create_engine(
-        "sqlite://",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    Base.metadata.create_all(engine)
-    TestSession = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
-
-    def override_get_session() -> Iterator[Session]:
-        with TestSession() as session:
-            yield session
-
-    app.dependency_overrides[get_session] = override_get_session
-    with TestClient(app) as test_client:
-        yield test_client
-    app.dependency_overrides.clear()
-    Base.metadata.drop_all(engine)
+@pytest.fixture(autouse=True)
+def setup_database():
+    """Создаёт таблицы перед каждым тестом и удаляет после."""
+    Base.metadata.create_all(bind=engine)
+    yield
+    Base.metadata.drop_all(bind=engine)
 
 
-@pytest.fixture()
-def account_payload() -> dict:
-    return {"name": "Иван Петров", "email": "ivan@example.com", "phone": "+7 900 000-00-00"}
+def override_get_db():
+    """Подменяет get_db на тестовую сессию."""
+    try:
+        db = TestingSessionLocal()
+        yield db
+    finally:
+        db.close()
+
+
+# Принудительно подменяем зависимость в приложении
+app.dependency_overrides[get_db] = override_get_db
+
+
+@pytest.fixture
+def client():
+    with TestClient(app) as c:
+        yield c
+
+
+@pytest.fixture
+def order_payload():
+    return {
+        "account_id": 1,
+        "item": "Тестовая пицца",
+        "quantity": 2
+    }

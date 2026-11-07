@@ -9,7 +9,7 @@ from collections.abc import Iterator
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
-from accounts.config import settings
+from orders.config import settings
 
 
 class Base(DeclarativeBase):
@@ -36,3 +36,6 @@ def get_session() -> Iterator[Session]:
     """
     with SessionFactory() as session:
         yield session
+
+# Алиас для совместимости с импортами в api.py
+get_db = get_session
