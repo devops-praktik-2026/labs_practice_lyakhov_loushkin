@@ -19,5 +19,6 @@ class Settings(BaseSettings):
     # Сколько секунд ждать ответа от сервиса клиентов, прежде чем сдаться.
     accounts_timeout_seconds: float = 2.0
 
+    database_url: str = "sqlite:///./orders.db"
 
 settings = Settings()
